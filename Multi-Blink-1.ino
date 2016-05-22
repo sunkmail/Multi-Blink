@@ -1,7 +1,11 @@
 #include <LiquidCrystal.h>
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
 
+/*                  // don't use non-I2C Display
 const int LCDEnable = 8;
 const int LCDRS = 7;
+*/
 
 const int led = 5;             // LED output on PWM Pin
 const int modeBt[2] = {4,0};           // Mode Change button on Pin 4, button # 0
@@ -28,21 +32,30 @@ int debounce_thresh = 2;
 
 String ModeName = "Flasher";    // set initial Mode Name
 
-
+/*                  // don't use non-I2C Display
       // LiquidCrystal(rs, enable, d4, d5, d6, d7)
 LiquidCrystal LCD(LCDRS, LCDEnable, 9, 10, 11, 12);
+*/
+
+LiquidCrystal_I2C LCD_I2C(0x27,16,2);  // set the lcd_I2C address to 0x27 for a 16 chars and 2 line display
 
 
 // the setup routine runs once when you press reset:
 void setup() {
+    LCD_I2C.init();                      // initialize the lcd_I2C 
+    LCD_I2C.init();
+    LCD_I2C.backlight();        // turn on backlight
+//    LCD_I2C.print("Hello, world!");
 
-    
+    /*                  // don't use non-I2C Display
     LCD.begin(16,2);
     LCD.clear();
+    */
+    
   LCDLayout();    // setup static Display elements
 //  LCDUpdate();    // Send initial Data to LCD
   
-  // initialize the led pin as an output.
+  // initialize the pins
   pinMode(led, OUTPUT);
   pinMode(modeBt[0], INPUT);
   pinMode(actionBt[0], INPUT);
@@ -239,17 +252,25 @@ void PotCycle(){
 
 void LCDLayout()
 { 
-//  LCD.print("Mode:");
+/*                  // don't use non-I2C Display
   LCD.setCursor(0,1);       // move cursor to first position (0) of the Bottom (1) Line
   LCD.print("Pot%:");
-  LCD.setCursor(8,0);
-  LCD.print("But.1:");
-  LCD.setCursor(8,1);
-  LCD.print("But.2:");
+  LCD.setCursor(9,0);
+  LCD.print("Bt.1:");
+  LCD.setCursor(9,1);
+  LCD.print("Bt.2:");
+*/
+  LCD_I2C.setCursor(0,1);       // move cursor to first position (0) of the Bottom (1) Line
+  LCD_I2C.print("Pot%:");
+  LCD_I2C.setCursor(9,0);
+  LCD_I2C.print("Bt.1:");
+  LCD_I2C.setCursor(9,1);
+  LCD_I2C.print("Bt.2:");
 }
 
 void LCDUpdate()
 {
+  /*                  // don't use non-I2C Display
   LCD.setCursor(0,0);
   LCD.print(ModeName);
   LCD.setCursor(15,0);
@@ -258,5 +279,14 @@ void LCDUpdate()
   LCD.print(digitalRead(actionBt[0]));
   LCD.setCursor(5,1);
   LCD.print(map(PotRaw,0,1022,0,100));
+  */
   
+  LCD_I2C.setCursor(0,0);
+  LCD_I2C.print(ModeName);
+  LCD_I2C.setCursor(15,0);
+  LCD_I2C.print(digitalRead(modeBt[0]));
+  LCD_I2C.setCursor(15,1);
+  LCD_I2C.print(digitalRead(actionBt[0]));
+  LCD_I2C.setCursor(6,1);
+  LCD_I2C.print(map(PotRaw,0,1022,0,99));
 }
