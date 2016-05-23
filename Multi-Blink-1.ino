@@ -57,8 +57,8 @@ void setup() {
   
   // initialize the pins
   pinMode(led, OUTPUT);
-  pinMode(modeBt[0], INPUT);
-  pinMode(actionBt[0], INPUT);
+  pinMode(modeBt[0], INPUT_PULLUP);
+  pinMode(actionBt[0], INPUT_PULLUP);
   if(Cycle_time < On_time)        // If Cycle time is shorter than On_Time, make it = On_time
     Cycle_time = On_time;     // prevents errors in Basic_flash routine
 }
@@ -222,7 +222,7 @@ void FlashPWM()
 boolean Debounce(int button, int button_Num){
   boolean _debounced = false;
   
-  if (digitalRead(button) == 1)
+  if (digitalRead(button) == !1)          // Active low due to internal pull-up
   {
     debounce[button_Num]++;                   // increment debounce counter
   }
