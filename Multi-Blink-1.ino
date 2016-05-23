@@ -30,6 +30,9 @@ int PotPrev = -1;    // make initial value not a valid input, for comparing in F
 int debounce[2] = {0,0};  // counter for debouncing sub., buttons #
 int debounce_thresh = 2;
 
+long deboucelastMillis[2] = {0,0};
+int debouceTime = 50;
+
 String ModeName = "Flasher";    // set initial Mode Name
 
 /*                  // don't use non-I2C Display
