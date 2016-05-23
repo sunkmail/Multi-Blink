@@ -24,14 +24,13 @@ unsigned long Cycle_time = 500;     // Total time of basicFlash cycle - must be 
 unsigned long previousMillis = 0;
 unsigned long currentMillis = 0;
 
-int PotRaw;
+int PotRaw = 0;
 int PotPrev = -1;    // make initial value not a valid input, for comparing in FlashPWM 
 
 int debounce[2] = {0,0};  // counter for debouncing sub., buttons #
-int debounce_thresh = 2;
-
-long deboucelastMillis[2] = {0,0};
-int debouceTime = 50;
+//int debounce_thresh = 2;
+long debouncelastMillis[2] = {0,0};    // debounce counter timer for buttons
+int debounceTime = 50;                 // # of ms before considering button active
 
 String ModeName = "Flasher";    // set initial Mode Name
 
@@ -91,7 +90,7 @@ void loop() {
       
     case 4:
       FlashNoDelay();
-          ModeName = "faster";
+          ModeName = "DutyCycle";
       break;
       
     case 5:
@@ -99,10 +98,6 @@ void loop() {
           ModeName = "Dimmer";
       break;
       
-/*    case 6:
-      
-      break;
-*/      
     default:
       Mode = 1;
             ModeName = "";
@@ -117,8 +112,8 @@ void loop() {
 void GetMode() {
   boolean ModeButtonPressed;               // This simulator doesn't like the line: boolean button = Debounce(modeBt);"
   ModeButtonPressed = Debounce(modeBt[0],modeBt[1]);      // works fine in Arduino IDE
-  
-  if((ModeButtonPressed == true) && (ModeChanged == 0))   // if Button debouncing (on rising edge) is finished
+                        // send pin # and Button #
+  if((ModeButtonPressed == true) && (ModeChanged == 0))   // if Button debouncing is finished
   { 
     ModeChanged++;        //  Set mode changed flag
     Mode++;           //  increment Mode
@@ -155,7 +150,7 @@ void Toggle_Latch()
 {
   boolean ActionButtonPressed;               // The simulator doesn't like the line: "boolean button = Debounce(modeBt, etc);"
   ActionButtonPressed = Debounce(actionBt[0],actionBt[1]);  // works fine in Arduino IDE
-  
+                        // send pin # and Button #  
   if((ActionButtonPressed == true) && (ActionState == 0)) // Action button being pressed
   { // and no change (action) has happened yet)
     digitalWrite(led,!digitalRead(led));  // Toggle LED State
@@ -205,11 +200,18 @@ void FlashNoDelay()
   {
     // save the last time you blinked the LED
     previousMillis = currentMillis;
-    
     digitalWrite(led,!led_state); // if the LED is off turn it on and vice-versa
   }
 }
 
+void PotCycle(){             // Duty cycle controlled by Pot
+  PotRaw = analogRead(Potpin);  
+  if(PotRaw != 0)
+  {
+    On_time = map(PotRaw,0,1023,0,Cycle_time);  //Make On_time proportional to pot position 
+  }
+  else On_time = Cycle_time / 2;
+  }
 
 void FlashPWM()
 {
@@ -222,36 +224,37 @@ void FlashPWM()
 }
 
 
-boolean Debounce(int button, int button_Num){
+boolean Debounce(int button_Pin, int button_Num)
+  {
   boolean _debounced = false;
   
-  if (digitalRead(button) == !1)          // Active low due to internal pull-up
-  {
-    debounce[button_Num]++;                   // increment debounce counter
-  }
-  else                                     
+  if ((digitalRead(button_Pin) == !1) && (debounce[button_Num] == 0))          // Active low due to internal pull-up && on first loop
+      {
+      debounce[button_Num]++;                   // increment debounce loop counter for active button
+      debounceLastMillis[button_Num] = millis();   // set base time for debounce count
+      }
+  else if ((digitalRead(button_Pin) == !1) && (debounce[button_Num] != 0))  // button active, not first loop
+      if(millis() - debounceLastMillis[button_Num] >= debounceTime)
+      {
+            _debounced = true;      
+            debounce[button_Num]++;                   // increment debounce loop counter for active button
+            //debounceLastMillis[button_Num] = millis();
+      }
+  else                                 
   { // If button NOT being Pressed  
-    debounce[button_Num] = 0;       // Reset Debounce counter
+    debounce[button_Num] = 0;       // Reset Debounce counter for button being queried
   }
   
-  if(debounce[button_Num] >= debounce_thresh)
+/*  if(debounce[button_Num] >= debounce_thresh)
   {
     debounce[button_Num] = debounce_thresh;   // Ensure counter never overflows, for a LOOONG press
     _debounced = true;
-  }
+  } */
   
   return _debounced;
-  
 }
 
-void PotCycle(){
-  PotRaw = analogRead(Potpin);  
-  if(PotRaw != 0)
-  {
-    On_time = map(PotRaw,0,1022,0,Cycle_time);  //Make On_time proportional to pot position 
-  }
-  else On_time = Cycle_time / 2;
-  }
+
 
 void LCDLayout()
 { 
