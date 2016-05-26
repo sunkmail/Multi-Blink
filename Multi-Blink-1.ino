@@ -14,9 +14,9 @@ const int PushButton1 = 0; // push button indicator for debouncing
 const int PushButton2 = 1; // Mode is button 1, action is button 2
 const int Potpin =A0;
 
-int Mode = 1;
-int ModeChanged = 0;
-int ActionState = 0;
+byte Mode = 1;
+byte ModeChanged = 0;
+byte ActionState = 0;
 
 unsigned long On_time = 150;        // Time to keep LED on for basicFlash, in ms
 unsigned long Cycle_time = 500;     // Total time of basicFlash cycle - must be >= On_time
@@ -30,7 +30,7 @@ int PotPrev = -1;    // make initial value not a valid input, for comparing in F
 int debounce[2] = {0,0};  // counter for debouncing sub., buttons #
 //int debounce_thresh = 2;
 unsigned long debounceLastMillis[2] = {0,0};    // debounce counter timer for buttons
-int debounceTime = 50;                 // # of ms before considering button active
+byte debounceTime = 50;                 // # of ms before considering button active
 
 String ModeName = "Flasher";    // set initial Mode Name
 
@@ -47,7 +47,6 @@ void setup() {
     LCD_I2C.init();                      // initialize the lcd_I2C 
     LCD_I2C.init();
     LCD_I2C.backlight();        // turn on backlight
-//    LCD_I2C.print("Hello, world!");
 
     /*                  // don't use non-I2C Display
     LCD.begin(16,2);
@@ -55,7 +54,7 @@ void setup() {
     */
     
   LCDLayout();    // setup static Display elements
-//  LCDUpdate();    // Send initial Data to LCD
+  LCDUpdate();    // Send initial Data to LCD
   
   // initialize the pins
   pinMode(led, OUTPUT);
@@ -74,27 +73,27 @@ void loop() {
   {
     case 1:                         // Flashing based on On_Time & Cycle Time
       Basic_Flash();
-          ModeName = "Flasher ";
+          ModeName = "Flasher  ";
       break;
       
     case 2:
       Toggle_Latch();
-          ModeName = "Toogle  ";
+          ModeName = "Toogle   ";
       break;
       
     case 3:
       Toggle_Momentary();
-          ModeName = "Moment";
+          ModeName = "Moment  ";
       break;
       
     case 4:
       FlashNoDelay();
-          ModeName = "DutyCycle";
+          ModeName = "DutyCycl ";
       break;
       
     case 5:
       FlashPWM();
-          ModeName = "Dimmer";
+          ModeName = "Dimmer   ";
       break;
       
     default:
@@ -198,7 +197,7 @@ void FlashNoDelay()
 
 void PotCycle(){             // Duty cycle controlled by Pot
   PotRaw = analogRead(Potpin);  
-  if(PotRaw <= 5)             // Pot doesn't always read down to 0.
+  if(PotRaw >= 5)             // Pot doesn't always read down to 0.
   {
     On_time = map(PotRaw,0,1023,0,Cycle_time);  //Make On_time proportional to pot position 
   }
@@ -207,7 +206,7 @@ void PotCycle(){             // Duty cycle controlled by Pot
 
 void FlashPWM()
 {
-  PotRaw = analogRead(Potpin);  
+//  PotRaw = analogRead(Potpin);  
   if(PotRaw != PotPrev)
   {
     analogWrite(led,PotRaw / 4);
@@ -280,5 +279,6 @@ void LCDUpdate()
   LCD_I2C.setCursor(15,1);
   LCD_I2C.print(digitalRead(actionBt[0]));
   LCD_I2C.setCursor(6,1);
+  PotCycle();
   LCD_I2C.print(map(PotRaw,0,1023,0,99));
 }
