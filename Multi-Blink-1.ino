@@ -29,7 +29,7 @@ int PotPrev = -1;    // make initial value not a valid input, for comparing in F
 
 int debounce[2] = {0,0};  // counter for debouncing sub., buttons #
 //int debounce_thresh = 2;
-long debouncelastMillis[2] = {0,0};    // debounce counter timer for buttons
+unsigned long debounceLastMillis[2] = {0,0};    // debounce counter timer for buttons
 int debounceTime = 50;                 // # of ms before considering button active
 
 String ModeName = "Flasher";    // set initial Mode Name
@@ -74,7 +74,6 @@ void loop() {
   {
     case 1:                         // Flashing based on On_Time & Cycle Time
       Basic_Flash();
-      //    ModeName = "";
           ModeName = "Flasher ";
       break;
       
@@ -128,14 +127,7 @@ void GetMode() {
 
 void Basic_Flash() 
 {
-/*  PotRaw = analogRead(Potpin);  
-  if(PotRaw != 0)
-  {
-    On_time = map(PotRaw,0,1022,0,Cycle_time);  //Make On_time proportional to pot position 
-  }
-  else On_time = Cycle_time / 2;
-*/  
-  PotCycle();   
+  PotCycle();   // determine duty cycle from pot position
   
   digitalWrite(led, HIGH);   // turn the LED on 
   delay(On_time);               // wait for 'On_time'
@@ -206,7 +198,7 @@ void FlashNoDelay()
 
 void PotCycle(){             // Duty cycle controlled by Pot
   PotRaw = analogRead(Potpin);  
-  if(PotRaw != 0)
+  if(PotRaw <= 5)             // Pot doesn't always read down to 0.
   {
     On_time = map(PotRaw,0,1023,0,Cycle_time);  //Make On_time proportional to pot position 
   }
@@ -228,28 +220,22 @@ boolean Debounce(int button_Pin, int button_Num)
   {
   boolean _debounced = false;
   
-  if ((digitalRead(button_Pin) == !1) && (debounce[button_Num] == 0))          // Active low due to internal pull-up && on first loop
+  if ((digitalRead(button_Pin) == !1) && (debounce[button_Num] == 0))  // Active low due to internal pull-up && on first loop
       {
       debounce[button_Num]++;                   // increment debounce loop counter for active button
       debounceLastMillis[button_Num] = millis();   // set base time for debounce count
       }
   else if ((digitalRead(button_Pin) == !1) && (debounce[button_Num] != 0))  // button active, not first loop
-      if(millis() - debounceLastMillis[button_Num] >= debounceTime)
+      if((millis() - debounceLastMillis[button_Num]) >= debounceTime)       // check if delay time reached
       {
-            _debounced = true;      
-            debounce[button_Num]++;                   // increment debounce loop counter for active button
+            _debounced = true;                        // set value to be returned to TRUE
+            debounce[button_Num]++;                   // increment debounce loop counter for active button, just for fun
             //debounceLastMillis[button_Num] = millis();
       }
   else                                 
   { // If button NOT being Pressed  
-    debounce[button_Num] = 0;       // Reset Debounce counter for button being queried
+    debounce[button_Num] = 0;       // when button released, Reset Debounce counter for button  
   }
-  
-/*  if(debounce[button_Num] >= debounce_thresh)
-  {
-    debounce[button_Num] = debounce_thresh;   // Ensure counter never overflows, for a LOOONG press
-    _debounced = true;
-  } */
   
   return _debounced;
 }
@@ -294,5 +280,5 @@ void LCDUpdate()
   LCD_I2C.setCursor(15,1);
   LCD_I2C.print(digitalRead(actionBt[0]));
   LCD_I2C.setCursor(6,1);
-  LCD_I2C.print(map(PotRaw,0,1022,0,99));
+  LCD_I2C.print(map(PotRaw,0,1023,0,99));
 }
